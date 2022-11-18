@@ -2,6 +2,8 @@ import http from'http';
 import Express,{Application, Request, Response} from 'express';
 import Path from 'path'
 import fs from 'fs';
+import {Pool} from "./db"
+import { FieldPacket, ResultSetHeader } from 'mysql2';
 const data = {
     name:"방과후 데이터",
     users:[
@@ -11,7 +13,10 @@ const data = {
     ]
 };
 
-const app : Application = Express(); // 
+const app : Application = Express();
+app.use(Express.json());//들어오는 post 데이터를 json으로 변경해서 body에 박아주는 역할 -> 이러면 req.rawHeader을 안써도 됨.
+app.use(Express.urlencoded({extended:true}));// 한글
+// 
 
 
     // const server = http.createServer((req,res)=>
@@ -38,6 +43,13 @@ const app : Application = Express(); //
     // })
 
 const server = http.createServer(app);
+
+app.post("/insert", async (req:Request, res:Response)=>
+{
+    console.log(req.rawHeaders);
+    let [result, info] : [ResultSetHeader, FieldPacket[]] = await Pool.query(`INSERT INTO scores (score, username, time) VALUES(?,?,NOW())`,[10,'new']);// sql인젝션 해킹 막기 위함.
+    res.json({msg:"성공적으로 기록 완료."});
+})
 
 //CRUD, RESTFUL
 app.get("/", (req:Request,res:Response)=> 
